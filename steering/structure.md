@@ -3,7 +3,7 @@
 ## Repository Shape
 - `src/specode/`: application package
 - `tests/`: automated tests around public behavior and session contracts
-- `steering/`: durable project memory for product, tech, structure, and vision guidance
+- `steering/`: durable project memory for product, tech, and structure guidance
 - `tasks/<task-name>/`: task-specific artifacts (`task.md`, `context.md`, `design.md`, `tasks.md`)
 - Root docs such as `README.md`: user-facing setup and project overview
 

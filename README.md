@@ -1,8 +1,10 @@
 # specode
 
-`specode` is a terminal-first AI chat assistant built with Python, Typer, Rich, and Pydantic AI.
+`specode` is an opinionated terminal framework for reliable AI-assisted software development.
 
-This repository is being built through a spec-driven workflow. The current milestone includes a working interactive CLI chat loop with terminal controls, startup configuration checks, and test coverage around the main public behavior.
+It starts as a terminal-first AI chat assistant built with Python, Typer, Rich, and Pydantic AI. The product direction is to bring Rails/Django-like conventions to agentic coding: durable steering docs, feature-scoped specs, reusable skills, and approval-gated workflows.
+
+This repository is being built through a spec-driven workflow. The current milestone includes a working interactive CLI chat loop with terminal controls, startup configuration checks, project steering support, and test coverage around the main public behavior.
 
 ## Requirements
 
@@ -75,7 +77,7 @@ uv tool install --force --reinstall git+https://github.com/ivand200/specode_cli.
 
 ## Project Workflow
 
-- `steering/` holds durable project memory: product, tech, structure, and vision.
+- `steering/` holds durable project memory: product, tech, and structure.
 - The `/steering` workflow can create or refresh `steering/product.md`, `steering/tech.md`, and `steering/structure.md` after showing the proposed changes and receiving `y` or `yes` approval.
 - `tasks/<task-name>/` holds task-specific artifacts: `task.md`, `context.md`, `design.md`, and `tasks.md`.
 - The workflow is intentionally small: clarify the task, design when useful, break work into slices, implement, review, and test.

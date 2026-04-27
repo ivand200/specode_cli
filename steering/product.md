@@ -2,11 +2,12 @@
 
 ## Purpose
 - `specode` is a terminal-first AI chat assistant.
-- It is being built as a polished CLI experience with lightweight spec-driven project steering.
+- It is evolving toward an opinionated CLI agent framework for spec-first AI development.
+- The long-term product direction is closer to a framework than a generic chatbot: it should guide users through durable conventions, structured artifacts, and repeatable workflows.
 
 ## Users / Actors
 - Primary user: a developer working in the terminal who wants to chat with an AI assistant.
-- Secondary audience: senior-engineering interviewers or profile reviewers evaluating product judgment and code quality.
+- Future user: a developer who wants Rails/Django-like workflow guidance for agentic coding rather than assembling prompts, docs, and tools by hand.
 - External actor: an OpenAI-backed model accessed through Pydantic AI.
 
 ## Core Workflows
@@ -22,12 +23,15 @@
 - Chat service: the model-facing boundary that turns a prompt plus session history into one assistant reply.
 - Steering docs: durable project-level memory in `steering/product.md`, `steering/tech.md`, and `steering/structure.md`.
 - Steering proposal: a previewable, validated set of foundational doc changes that can be accepted or rejected.
+- Specs: feature- or bug-scoped artifacts that capture requirements, design, and implementation slices.
+- Skills: reusable, on-demand workflow packages that shape how the agent clarifies, plans, executes, reviews, or tests work.
 
 ## Scope Boundaries
 - No persistent chat history across runs.
 - No multi-provider or account system yet.
 - No full-screen terminal IDE or pane-based TUI.
 - `/steering` is limited to foundational project steering; task plans and implementation artifacts stay outside the product workflow for now.
+- The framework should stay opinionated without becoming a heavyweight project-management system.
 
 ## Durable Constraints
 - `specode` remains the primary command and user-facing entrypoint.
