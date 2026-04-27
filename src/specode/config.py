@@ -1,12 +1,11 @@
 """Configuration loading for specode."""
 
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
-
-DEFAULT_MODEL_NAME = "openai:gpt-5.2"
+DEFAULT_MODEL_NAME = "openai:gpt-5.4-mini"
 
 
 class ConfigurationError(RuntimeError):
@@ -33,4 +32,3 @@ def load_settings() -> Settings:
         )
 
     return Settings(openai_api_key=api_key)
-
