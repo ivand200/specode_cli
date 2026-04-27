@@ -116,9 +116,12 @@ def test_steering_repository_tools_expose_safe_bounded_results(tmp_path: Path) -
     read = _read_file_tool(ctx, path="README.md", limit=1)
     search = _search_text_tool(ctx, query="secret")
 
+    assert listing["ok"] is True
     assert listing["paths"] == ["README.md"]
+    assert read["ok"] is True
     assert read["content"] == "API_TOKEN=[REDACTED]\n"
     assert read["redacted"] is True
+    assert search["ok"] is True
     assert search["matches"] == [
         {
             "path": "README.md",
@@ -127,3 +130,21 @@ def test_steering_repository_tools_expose_safe_bounded_results(tmp_path: Path) -
             "redacted": True,
         }
     ]
+
+
+def test_steering_repository_tools_return_blocked_results_for_policy_refusals(
+    tmp_path: Path,
+) -> None:
+    write_file(tmp_path / ".env", "API_TOKEN=real\n")
+    ctx = ToolContext(RepositoryInspector(tmp_path))
+
+    read = _read_file_tool(ctx, path=".env")
+    listing = _list_files_tool(ctx, path="../outside")
+    search = _search_text_tool(ctx, query="")
+
+    assert read["ok"] is False
+    assert "excluded by workspace policy" in str(read["error"])
+    assert listing["ok"] is False
+    assert "outside the project root" in str(listing["error"])
+    assert search["ok"] is False
+    assert "query must not be empty" in str(search["error"])

@@ -184,8 +184,13 @@ def _list_files_tool(
     ctx: RunContext[RepositoryInspector], path: str = ".", limit: int = 200
 ) -> dict[str, object]:
     """List safe repository files under a project-relative path."""
-    listing = ctx.deps.list_files(path=path, limit=limit)
+    try:
+        listing = ctx.deps.list_files(path=path, limit=limit)
+    except RepositoryError as exc:
+        return _blocked_tool_result(exc)
+
     return {
+        "ok": True,
         "paths": listing.paths,
         "total_count": listing.total_count,
         "limit": listing.limit,
@@ -197,8 +202,13 @@ def _read_file_tool(
     ctx: RunContext[RepositoryInspector], path: str, offset: int = 0, limit: int = 200
 ) -> dict[str, object]:
     """Read a safe text file by 0-based line offset and bounded line count."""
-    read = ctx.deps.read_file(path=path, offset=offset, limit=limit)
+    try:
+        read = ctx.deps.read_file(path=path, offset=offset, limit=limit)
+    except RepositoryError as exc:
+        return _blocked_tool_result(exc)
+
     return {
+        "ok": True,
         "path": read.path,
         "content": read.content,
         "offset": read.offset,
@@ -215,8 +225,13 @@ def _search_text_tool(
     ctx: RunContext[RepositoryInspector], query: str, limit: int = 50
 ) -> dict[str, object]:
     """Search safe repository text and return bounded redacted matching lines."""
-    search = ctx.deps.search_text(query=query, limit=limit)
+    try:
+        search = ctx.deps.search_text(query=query, limit=limit)
+    except RepositoryError as exc:
+        return _blocked_tool_result(exc)
+
     return {
+        "ok": True,
         "query": search.query,
         "matches": [
             {
@@ -230,6 +245,14 @@ def _search_text_tool(
         "limit": search.limit,
         "truncated": search.truncated,
         "redacted": search.redacted,
+    }
+
+
+def _blocked_tool_result(exc: RepositoryError) -> dict[str, object]:
+    return {
+        "ok": False,
+        "error": str(exc),
+        "hint": "Choose a listed safe project-relative text file and continue.",
     }
 
 
