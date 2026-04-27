@@ -47,7 +47,13 @@ EXPECTED_HEADINGS = {
 }
 
 SECRET_CONTENT_PATTERN = re.compile(
-    r"(?im)^\s*[A-Z0-9_]*(?:API[_-]?KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*\s*[:=]\s*\S+"
+    r"(?im)"
+    r"("
+    r"^\s*[\w.-]*(?:api[_-]?key|auth|password|passwd|private[_-]?key|secret|token|"
+    r"access[_-]?key)[\w.-]*\s*[:=]\s*['\"]?[^'\"\s#]+"
+    r"|^\s*authorization\s*:\s*bearer\s+\S+"
+    r"|\bbearer\s+[A-Za-z0-9._~+/=-]{8,}"
+    r")"
 )
 
 GENERATED_DUMP_MARKERS = (

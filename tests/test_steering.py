@@ -247,7 +247,16 @@ def test_rejects_writes_outside_foundational_steering_files(tmp_path: Path, path
     assert not (tmp_path / "tasks").exists()
 
 
-def test_rejects_secret_looking_content(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "content",
+    [
+        "OPENAI_API_KEY=sk-test\n",
+        "openai_api_key=sk-test\n",
+        "api_token: secret-value\n",
+        "Authorization: Bearer abcdefghijklmnop\n",
+    ],
+)
+def test_rejects_secret_looking_content(tmp_path: Path, content: str) -> None:
     store = SteeringStore(tmp_path)
 
     with pytest.raises(SteeringValidationError, match="secret-looking"):
@@ -257,7 +266,7 @@ def test_rejects_secret_looking_content(tmp_path: Path) -> None:
                     SteeringFileProposal(
                         path="steering/product.md",
                         action="create",
-                        content="OPENAI_API_KEY=sk-test\n",
+                        content=content,
                     ),
                 )
             )

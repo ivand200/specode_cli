@@ -38,6 +38,32 @@ If the package is installed in an environment that exposes console scripts, you 
 specode
 ```
 
+## Install as a Global Tool
+
+Install SpeCode from GitHub with `uv`:
+
+```bash
+uv tool install git+https://github.com/ivand200/specode_cli.git
+```
+
+After installing, run `specode` from any project directory:
+
+```bash
+specode
+```
+
+To update an existing install:
+
+```bash
+uv tool upgrade specode --reinstall
+```
+
+If `uv` reports that `specode` is already installed and you want to reinstall directly from GitHub:
+
+```bash
+uv tool install --force --reinstall git+https://github.com/ivand200/specode_cli.git
+```
+
 ## Current Status
 
 - The `specode` command launches an interactive terminal session.

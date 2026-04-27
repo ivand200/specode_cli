@@ -121,9 +121,7 @@ def _run_steering_command(console, input_handler: InputHandler) -> None:
     workflow = create_steering_workflow()
 
     try:
-        render_steering_phase(console, "Inspecting project...")
-        render_steering_phase(console, "Drafting steering updates...")
-        render_steering_phase(console, "Validating proposal...")
+        render_steering_phase(console, "Preparing steering proposal...")
         prepared = workflow.prepare()
     except (
         SteeringDraftServiceError,

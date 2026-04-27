@@ -12,6 +12,7 @@ from pydantic_ai.messages import ModelMessage
 from specode.config import DEFAULT_MODEL_NAME
 from specode.repository import RepositoryError, RepositoryInspector
 from specode.steering import (
+    SteeringDraftService,
     SteeringFileProposal,
     SteeringProposal,
     SteeringTextEdit,
@@ -93,30 +94,38 @@ class _SteeringProposalOutput(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
-class SteeringDraftService(Protocol):
-    """Stable model boundary for project-steering draft generation."""
+STEERING_DRAFT_INSTRUCTIONS = """You draft compact project steering docs for SpeCode.
 
-    def draft(self, repository: RepositoryInspector) -> SteeringProposal:
-        """Generate a structured steering proposal from safe repository tools."""
+Steering is durable project memory, not a task plan or repo inventory.
+It should help future AI coding sessions follow this project's product goals,
+technical constraints, module boundaries, and conventions.
 
-
-STEERING_DRAFT_INSTRUCTIONS = """You draft tiny durable project steering docs for SpeCode.
-
-Use the read-only repository tools to inspect only enough evidence to identify durable
-project-level guidance. Prefer existing steering docs, README files, package manifests,
-tool config, entry points, key directories, and representative modules.
-
-Foundational outputs are:
+Write only foundational steering docs:
 - steering/product.md
 - steering/tech.md
 - steering/structure.md
 
-Steering fit test:
-- Include facts only when they are durable, project-level, useful across multiple tasks,
-  and not cheaper to rediscover from code.
-- Exclude task requirements, rollout notes, secrets, credentials, sample PII, generated
-  config dumps, exhaustive dependency lists, file trees, and drift-prone implementation
-  details.
+Inspect evidence in this order:
+1. existing steering/*.md
+2. README*
+3. package/tool config
+4. top-level files and directories
+5. entry points
+6. representative source and tests
+
+Include facts only when they are:
+- durable
+- project-level
+- useful across multiple future tasks
+- supported by repo evidence or explicit user direction
+- not cheaper to rediscover from code
+
+Exclude:
+- task requirements or implementation plans
+- changelogs or temporary rollout notes
+- secrets, credentials, sample PII
+- generated dumps, dependency dumps, file inventories
+- speculative architecture or details likely to drift
 
 Required shapes:
 - product.md: Purpose, Users / Actors, Core Workflows, Core Domain Concepts,
@@ -126,21 +135,24 @@ Required shapes:
 - structure.md: Repository Shape, Entry Points, Architectural Conventions,
   Module Contract, Where To Put New Work.
 
-For missing or empty foundational files, propose action=create with full compact content.
-For ordinary existing files, propose action=update with exact old_text/new_text edits.
-Use action=replace only when a non-empty foundational file appears malformed. Keep custom
-steering docs read-only; use them only as background when a durable fact clearly belongs
-in a foundational file. If no useful durable update is needed, return no changes.
+Prefer short bullets. Capture the "why" behind important conventions when evidence supports it.
+For missing or empty files, propose action=create with full compact content.
+For existing files, propose action=update with exact old_text/new_text edits.
+Use action=replace only for malformed non-empty foundational files.
+Keep custom steering docs read-only; use them only as background.
+
+Before returning, check that each proposed change is concise, evidence-backed,
+in the right file, and useful enough that future agents should not rediscover it.
+Return no changes if the current steering docs are already good enough.
 """
 
 STEERING_DRAFT_PROMPT = (
-    "Inspect the current project with the available read-only tools and return a structured "
-    "proposal for foundational steering docs. Do not propose task artifacts, source edits, "
-    "shell commands, delete operations, or specialized steering docs."
+    "Inspect the current project with read-only tools. Draft only necessary foundational "
+    "steering changes. Prefer no changes over noisy or speculative docs."
 )
 
 
-class PydanticAISteeringDraftService:
+class PydanticAISteeringDraftService(SteeringDraftService):
     """Pydantic AI-backed draft service with read-only repository tools."""
 
     def __init__(

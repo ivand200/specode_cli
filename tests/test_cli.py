@@ -181,9 +181,7 @@ def test_steering_command_applies_after_explicit_yes(monkeypatch) -> None:
     )
 
     assert result.exit_code == 0
-    assert "Inspecting project..." in result.stdout
-    assert "Drafting steering updates..." in result.stdout
-    assert "Validating proposal..." in result.stdout
+    assert "Preparing steering proposal..." in result.stdout
     assert "Steering Proposal" in result.stdout
     assert "steering/product.md" in result.stdout
     assert "Apply these steering changes? [y/N]" in result.stdout
