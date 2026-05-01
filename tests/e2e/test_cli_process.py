@@ -79,7 +79,9 @@ def test_specode_exits_with_configuration_error_when_openai_api_key_is_missing(
     tmp_path: Path,
 ) -> None:
     result, env = _run_specode(tmp_path, stdin="", extra_env={"OPENAI_API_KEY": ""})
-    diagnostics = _format_diagnostics(env, result.stdout, result.stderr, returncode=result.returncode)
+    diagnostics = _format_diagnostics(
+        env, result.stdout, result.stderr, returncode=result.returncode
+    )
 
     assert result.returncode == 1, diagnostics
     assert "Configuration Error" in result.stdout, diagnostics
@@ -92,7 +94,9 @@ def test_specode_handles_help_then_exit_without_calling_a_model(tmp_path: Path) 
         stdin="/help\n/exit\n",
         extra_env={"OPENAI_API_KEY": "test-key"},
     )
-    diagnostics = _format_diagnostics(env, result.stdout, result.stderr, returncode=result.returncode)
+    diagnostics = _format_diagnostics(
+        env, result.stdout, result.stderr, returncode=result.returncode
+    )
 
     assert result.returncode == 0, diagnostics
     assert "Type / for commands" in result.stdout, diagnostics

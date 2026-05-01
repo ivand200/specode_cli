@@ -9,7 +9,9 @@ from specode.config import (
 )
 
 
-def test_raises_a_clear_error_when_openai_api_key_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_raises_a_clear_error_when_openai_api_key_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "")
 
     with pytest.raises(ConfigurationError) as exc_info:
