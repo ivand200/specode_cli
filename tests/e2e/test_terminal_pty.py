@@ -21,9 +21,7 @@ pexpect = pytest.importorskip("pexpect", reason="pexpect is required for PTY e2e
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COMMAND = "uv run specode"
 PTY_TIMEOUT_SECONDS = 4
-ANSI_ESCAPE_PATTERN = re.compile(
-    r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1B\\))"
-)
+ANSI_ESCAPE_PATTERN = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1B\\))")
 
 
 def _isolated_env(tmp_path: Path) -> dict[str, str]:
