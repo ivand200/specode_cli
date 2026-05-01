@@ -42,6 +42,7 @@ EXPECTED_HEADINGS = {
         "Entry Points",
         "Architectural Conventions",
         "Module Contract",
+        "Module Interface Map",
         "Where To Put New Work",
     ),
 }

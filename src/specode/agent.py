@@ -8,8 +8,9 @@ from typing import Literal, Protocol
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.messages import ModelMessage
+from pydantic_ai.settings import ModelSettings
 
-from specode.config import DEFAULT_MODEL_NAME
+from specode.config import DEFAULT_MODEL_NAME, DEFAULT_MODEL_SETTINGS
 from specode.repository import RepositoryError, RepositoryInspector
 from specode.steering import (
     SteeringDraftService,
@@ -51,8 +52,16 @@ class ChatService(Protocol):
 class PydanticAIChatService:
     """Chat service backed by a single Pydantic AI agent."""
 
-    def __init__(self, model_name: str = DEFAULT_MODEL_NAME) -> None:
-        self._agent = Agent(model_name, instructions=SPECODE_INSTRUCTIONS)
+    def __init__(
+        self,
+        model_name: str = DEFAULT_MODEL_NAME,
+        model_settings: ModelSettings | None = None,
+    ) -> None:
+        self._agent = Agent(
+            model_name,
+            instructions=SPECODE_INSTRUCTIONS,
+            model_settings=model_settings or DEFAULT_MODEL_SETTINGS.copy(),
+        )
 
     def reply(self, prompt: str, history: list[ModelMessage]) -> ChatReply:
         """Generate one assistant reply while preserving message history."""
@@ -75,7 +84,10 @@ class _SteeringTextEditOutput(BaseModel):
 
 class _SteeringFileProposalOutput(BaseModel):
     path: str = Field(
-        description="Target path, limited to steering/product.md, tech.md, structure.md"
+        description=(
+            "Target path, limited to steering/product.md, steering/tech.md, "
+            "or steering/structure.md"
+        )
     )
     action: Literal["create", "update", "replace"]
     reason: str = Field(default="", description="Why this file needs a durable steering change")
@@ -94,38 +106,44 @@ class _SteeringProposalOutput(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
-STEERING_DRAFT_INSTRUCTIONS = """You draft compact project steering docs for SpeCode.
+STEERING_DRAFT_INSTRUCTIONS = """You maintain tiny, durable project-level steering docs for SpeCode.
 
-Steering is durable project memory, not a task plan or repo inventory.
-It should help future AI coding sessions follow this project's product goals,
-technical constraints, module boundaries, and conventions.
+Steering docs are not task plans, code inventories, or generated project summaries.
+They capture stable facts that future AI coding sessions should not have to rediscover.
 
-Write only foundational steering docs:
+Use steering/ by default and write only foundational steering docs:
 - steering/product.md
 - steering/tech.md
 - steering/structure.md
 
+Refresh existing files in place with targeted edits. Do not create parallel copies.
+Add a focused steering doc only when repeated specialized guidance no longer fits cleanly
+in a few bullets, but keep custom steering docs read-only in this workflow.
+
 Inspect evidence in this order:
-1. existing steering/*.md
+1. existing steering/
 2. README*
-3. package/tool config
+3. package manifests and tool config
 4. top-level files and directories
 5. entry points
 6. representative source and tests
+7. optional task files, only for durable facts or steering gaps
+
+Prefer current repository evidence and explicit user direction over older docs.
 
 Include facts only when they are:
 - durable
 - project-level
-- useful across multiple future tasks
+- useful across multiple tasks
 - supported by repo evidence or explicit user direction
 - not cheaper to rediscover from code
 
 Exclude:
-- task requirements or implementation plans
+- task-specific requirements, acceptance criteria, or implementation plans
 - changelogs or temporary rollout notes
 - secrets, credentials, sample PII
-- generated dumps, dependency dumps, file inventories
-- speculative architecture or details likely to drift
+- generated config dumps, dependency dumps, or file inventories
+- speculative architecture or implementation details likely to drift
 
 Required shapes:
 - product.md: Purpose, Users / Actors, Core Workflows, Core Domain Concepts,
@@ -133,17 +151,52 @@ Required shapes:
 - tech.md: Stack, Key Services / Infrastructure, Engineering Conventions,
   Related Steering Docs, Technical Constraints.
 - structure.md: Repository Shape, Entry Points, Architectural Conventions,
-  Module Contract, Where To Put New Work.
+  Module Contract, Module Interface Map when stable module boundaries are known and the map
+  will prevent repeated rediscovery or boundary violations, Where To Put New Work.
+
+Keep structure.md sections distinct:
+- Entry Points answers where execution or reading starts.
+- Where To Put New Work answers where a change should live.
+- Module Contract answers what broad rules changes must respect.
+- Module Interface Map answers what stable boundaries, contracts, and hidden details
+  future work must respect.
+
+Module Contract and Module Interface Map should stay compact. The map is a boundary map,
+not a file inventory. Include only durable boundaries where the map teaches something
+not cheaper to rediscover from code: ownership, invariants, allowed dependencies,
+hidden design decisions, review risk, or test boundary.
+
+For each mapped boundary, prefer one compact bullet or row that captures:
+- module or subsystem name
+- responsibility or design decision it owns
+- public interface callers may rely on, such as endpoints, commands, events, schemas,
+  services, or exported operations
+- implementation details callers and tests must not depend on, such as storage layout,
+  helper call order, prompts, retry mechanics, cache behavior, log text, private state,
+  or algorithm choice
+- contract or behavior tests that protect the boundary, when known
+- changes that require deeper review, such as public contract, auth, permissions,
+  data integrity, migration, concurrency, performance, operational risk, or boundary leakage
+
+Do not use Module Interface Map for:
+- listing files and their obvious contents
+- repeating Entry Points or Where To Put New Work
+- documenting private helpers, call graphs, or implementation sequence
+- speculative future modules
+- task-specific design notes
+- every folder in the repo
 
 Prefer short bullets. Capture the "why" behind important conventions when evidence supports it.
 For missing or empty files, propose action=create with full compact content.
 For existing files, propose action=update with exact old_text/new_text edits.
 Use action=replace only for malformed non-empty foundational files.
-Keep custom steering docs read-only; use them only as background.
 
 Before returning, check that each proposed change is concise, evidence-backed,
 in the right file, and useful enough that future agents should not rediscover it.
 Return no changes if the current steering docs are already good enough.
+Update steering only when durable truth changed. Task scale is irrelevant: do not refresh
+steering just because a task is large, and do not skip relevant steering just because a task
+is small.
 """
 
 STEERING_DRAFT_PROMPT = (
@@ -158,6 +211,7 @@ class PydanticAISteeringDraftService(SteeringDraftService):
     def __init__(
         self,
         model_name: str = DEFAULT_MODEL_NAME,
+        model_settings: ModelSettings | None = None,
         agent: Agent[RepositoryInspector, _SteeringProposalOutput] | None = None,
     ) -> None:
         self._agent = agent or Agent(
@@ -165,6 +219,7 @@ class PydanticAISteeringDraftService(SteeringDraftService):
             deps_type=RepositoryInspector,
             output_type=_SteeringProposalOutput,
             instructions=STEERING_DRAFT_INSTRUCTIONS,
+            model_settings=model_settings or DEFAULT_MODEL_SETTINGS.copy(),
             tools=(
                 _list_files_tool,
                 _read_file_tool,

@@ -1,11 +1,15 @@
 """Configuration loading for specode."""
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Final
 
 from dotenv import load_dotenv
+from pydantic_ai.settings import ModelSettings, ThinkingEffort
 
-DEFAULT_MODEL_NAME = "openai:gpt-5.4-mini"
+DEFAULT_MODEL_NAME: Final = "openai:gpt-5.4-mini"
+DEFAULT_REASONING_EFFORT: Final[ThinkingEffort] = "xhigh"
+DEFAULT_MODEL_SETTINGS: Final[ModelSettings] = {"thinking": DEFAULT_REASONING_EFFORT}
 
 
 class ConfigurationError(RuntimeError):
@@ -18,6 +22,7 @@ class Settings:
 
     openai_api_key: str
     model_name: str = DEFAULT_MODEL_NAME
+    model_settings: ModelSettings = field(default_factory=lambda: DEFAULT_MODEL_SETTINGS.copy())
 
 
 def load_settings() -> Settings:

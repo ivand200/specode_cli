@@ -2,14 +2,18 @@ from pathlib import Path
 
 import pytest
 
+import specode.agent as agent_module
 from specode.agent import (
+    PydanticAIChatService,
     PydanticAISteeringDraftService,
+    STEERING_DRAFT_INSTRUCTIONS,
     STEERING_DRAFT_PROMPT,
     SteeringDraftServiceError,
     _list_files_tool,
     _read_file_tool,
     _search_text_tool,
 )
+from specode.config import DEFAULT_MODEL_NAME, DEFAULT_MODEL_SETTINGS
 from specode.repository import RepositoryError, RepositoryInspector
 from specode.steering import SteeringFileProposal, SteeringProposal
 
@@ -47,6 +51,12 @@ class ToolContext:
         self.deps = deps
 
 
+class CapturingAgent:
+    def __init__(self, *args, **kwargs) -> None:
+        self.args = args
+        self.kwargs = kwargs
+
+
 def write_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
@@ -71,6 +81,25 @@ def test_steering_draft_service_returns_structured_proposal(tmp_path: Path) -> N
 
     assert result == proposal
     assert fake_agent.calls == [(STEERING_DRAFT_PROMPT, repository)]
+
+
+def test_runtime_agents_use_configured_model_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    created_agents: list[CapturingAgent] = []
+
+    def fake_agent(*args, **kwargs) -> CapturingAgent:
+        agent = CapturingAgent(*args, **kwargs)
+        created_agents.append(agent)
+        return agent
+
+    monkeypatch.setattr(agent_module, "Agent", fake_agent)
+
+    PydanticAIChatService()
+    PydanticAISteeringDraftService()
+
+    assert created_agents[0].args[0] == DEFAULT_MODEL_NAME
+    assert created_agents[0].kwargs["model_settings"] == DEFAULT_MODEL_SETTINGS
+    assert created_agents[1].args[0] == DEFAULT_MODEL_NAME
+    assert created_agents[1].kwargs["model_settings"] == DEFAULT_MODEL_SETTINGS
 
 
 def test_steering_draft_service_retries_one_transient_failure(tmp_path: Path) -> None:
@@ -105,6 +134,13 @@ def test_steering_draft_service_does_not_retry_repository_errors(tmp_path: Path)
         service.draft(repository)
 
     assert fake_agent.calls == 1
+
+
+def test_steering_draft_instructions_include_current_project_specs_guidance() -> None:
+    assert "Module Interface Map" in STEERING_DRAFT_INSTRUCTIONS
+    assert "boundary map" in STEERING_DRAFT_INSTRUCTIONS
+    assert "not a file inventory" in STEERING_DRAFT_INSTRUCTIONS
+    assert "Update steering only when durable truth changed." in STEERING_DRAFT_INSTRUCTIONS
 
 
 def test_steering_repository_tools_expose_safe_bounded_results(tmp_path: Path) -> None:

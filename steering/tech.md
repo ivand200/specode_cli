@@ -20,6 +20,7 @@
 - Keep module responsibilities narrow: CLI orchestration, config loading, session behavior, model adapter, and UI rendering should stay separate.
 - Prefer simple synchronous control flow unless requirements force something more complex.
 - Test public behavior at stable boundaries such as the CLI command and session workflow.
+- Follow the dedicated testing guidance in `steering/testing.md` for unit, CLI, process e2e, and PTY e2e coverage.
 - Keep repository inspection bounded, redacted, and read-only when exposing project evidence to a model.
 - Use `pytest` for tests and `ruff` for linting.
 - When working with Pydantic AI, use the official docs reference at https://pydantic.dev/docs/ai/llms.txt as a primary source for current API and integration guidance.
@@ -27,6 +28,7 @@
 ## Related Steering Docs
 - [Product Spec](/Users/ivandubograi/Documents/ai_practice/cli_agent_4/steering/product.md)
 - [Structure Spec](/Users/ivandubograi/Documents/ai_practice/cli_agent_4/steering/structure.md)
+- [Testing Spec](/Users/ivandubograi/Documents/ai_practice/cli_agent_4/steering/testing.md)
 
 ## Technical Constraints
 - Do not require more than `OPENAI_API_KEY` unless product direction changes.

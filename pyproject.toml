@@ -21,6 +21,7 @@ specode = "specode.cli:main"
 
 [dependency-groups]
 dev = [
+    "pexpect",
     "pytest",
     "ruff",
 ]
@@ -29,7 +30,11 @@ dev = [
 packages = ["src/specode"]
 
 [tool.pytest.ini_options]
-addopts = "-q"
+addopts = '-q -m "not pty"'
+markers = [
+    "e2e: marks end-to-end CLI tests",
+    "pty: marks PTY-backed terminal tests that are excluded from default pytest runs",
+]
 testpaths = ["tests"]
 
 [tool.ruff]
